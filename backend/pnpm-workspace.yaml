@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: true
+  # Download analytics pulled in by swagger-ui; not needed.
+  "@scarf/scarf": false
