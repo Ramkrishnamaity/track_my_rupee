@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { env } from "@/config/env"
 import { createApiClient } from "@/lib/api"
 
 /** Must match SESSION_COOKIE in backend/src/config/cookies.ts */
@@ -15,6 +16,7 @@ export const SESSION_COOKIE = "tmr_session"
 export async function getServerApi() {
   const session = (await cookies()).get(SESSION_COOKIE)
   return createApiClient({
+    baseURL: env.API_URL, // the server calls the backend directly
     headers: session ? { cookie: `${SESSION_COOKIE}=${session.value}` } : {},
   })
 }

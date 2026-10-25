@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { GoogleIcon } from "@/components/icons/google-icon"
-import { env } from "@/config/env"
+import { API_PATH } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 type GoogleSignInButtonProps = {
@@ -13,7 +13,8 @@ type GoogleSignInButtonProps = {
   compact?: boolean
 }
 
-const LOGIN_URL = `${env.API_URL}/auth/google`
+// Same site as the pages, so the login cookie is saved where the Next.js server can read it.
+const LOGIN_URL = `${API_PATH}/auth/google`
 
 /**
  * Starts Google login on the backend, which redirects to Google and back.

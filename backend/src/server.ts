@@ -1,10 +1,14 @@
 import { createApp } from "@/app"
-import { env } from "@/config/env"
+import { env, isProduction } from "@/config/env"
 import { pool } from "@/db"
 import { logger } from "@/utils/logger"
+import { loadFrontend } from "@/web"
 
-const server = createApp().listen(env.PORT, async () => {
-  logger.info(`TrackMyRupee API running on http://localhost:${env.PORT} (${env.NODE_ENV})`)
+// Production: this server also serves the frontend. Development: run `pnpm dev` in frontend/ as well.
+const web = isProduction ? await loadFrontend() : undefined
+
+const server = createApp(web).listen(env.PORT, async () => {
+  logger.info(`TrackMyRupee ${web ? "app" : "API"} running on http://localhost:${env.PORT} (${env.NODE_ENV})`)
   try {
     await pool.query("SELECT 1")
     logger.info("Database connected")

@@ -51,18 +51,31 @@ API docs (development only): http://localhost:4000/api/docs
 ```bash
 cd frontend
 pnpm install
-cp .env.example .env.dev      # NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+cp .env.example .env.dev      # API_URL=http://localhost:4000/api/v1
 pnpm dev                      # app on http://localhost:3000
 ```
 
-Env files (never committed), loaded by `next.config.ts`; a missing `NEXT_PUBLIC_API_URL` stops the app with an error:
+The browser always calls `/api/v1` on the app's own address; in development `next.config.ts` forwards it to
+`API_URL`. Env files (never committed) are loaded by `next.config.ts`, and a missing `API_URL` stops the app:
 
-| File        | Used by                    |
-| ----------- | -------------------------- |
-| `.env.dev`  | `pnpm dev`                 |
-| `.env.prod` | `pnpm build`, `pnpm start` |
+| File        | Used by                  |
+| ----------- | ------------------------ |
+| `.env.dev`  | `pnpm dev`               |
+| `.env.prod` | `pnpm build`, production |
 
-`NEXT_PUBLIC_*` values are built into the app, so set `.env.prod` **before** `pnpm build`.
+## Production: one server
+
+In production the backend also serves the built frontend, so the whole app runs on one address
+(one domain, so the login cookie works for both). `/api/*` goes to the API; every other path goes to Next.js.
+
+```bash
+cd frontend && pnpm install && pnpm build    # API_URL=http://localhost:<PORT>/api/v1
+cd ../backend && pnpm install && pnpm build
+pnpm start:prod                              # NODE_ENV=production → serves API + frontend on PORT
+```
+
+Hosting: one Render web service (build both apps, start `backend`) and Neon for PostgreSQL. Run
+`pnpm db:migrate:prod` from your machine against Neon before deploying schema changes.
 
 ## Scripts
 

@@ -6,6 +6,7 @@ Login is Google only, with no separate login or signup pages. See README.md for 
 - `frontend/`: Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui, runs on :3000
 - `backend/`: Express 5 REST API under `/api/v1`, Drizzle ORM, PostgreSQL, runs on :4000. Swagger is at `/api/docs` (development only)
 - pnpm in both apps. Each app is its own package, so run commands inside `frontend/` or `backend/`
+- Production is one server: with `NODE_ENV=production` the backend (`src/web.ts`) also serves the built Next.js app. `/api/*` goes to Express; everything else goes to Next. Middleware such as helmet and logging applies only to `/api`. Hosting is one Render web service plus Neon PostgreSQL.
 
 ## Before finishing any change
 
@@ -61,7 +62,8 @@ Layout: `routes/` → `validators/` (zod) → `middlewares/` → `controllers/` 
   - `BlockedSection`: for features not built yet
   - sonner `toast` after mutations, then `router.refresh()`
 - Filters, month and page are stored in the URL `searchParams`, and default values are left out of the URL.
-- Env: read values only through `config/env.ts`, writing each `process.env.NEXT_PUBLIC_*` out literally. `next.config.ts` loads `.env.dev` (`next dev`) or `.env.prod` (`next build` / `start`) and fails if a value is missing.
+- The browser calls the API on its own address (`API_PATH` = `/api/v1` in `lib/api.ts`). The Next.js server calls `env.API_URL` directly. In development, the `next.config.ts` rewrite forwards `/api/v1` to `:4000`.
+- Env: read values only through `config/env.ts` (server-only). `next.config.ts` loads `.env.dev` (`next dev`) or `.env.prod` (production) from `frontend/`, and fails if a value is missing.
 - Colours come from tokens in `app/globals.css` (light and dark).
 - `lib/landing-data.ts` holds the sample numbers for the home page only. The app itself uses real API data.
 

@@ -1,6 +1,7 @@
 import axios, { type AxiosRequestConfig, isAxiosError } from "axios"
 
-import { env } from "@/config/env"
+/** Where the browser calls the API: this same site. */
+export const API_PATH = "/api/v1"
 
 /** Every API response has this shape. */
 export type ApiResponse<T = unknown> = {
@@ -45,10 +46,10 @@ function toApiError(error: unknown): ApiError {
  */
 export function createApiClient(config: AxiosRequestConfig = {}) {
   const http = axios.create({
-    baseURL: env.API_URL,
+    // Browser: this same site (the cookie is sent automatically). The Next.js server passes
+    // the real backend URL instead (see getServerApi).
+    baseURL: API_PATH,
     timeout: 15_000,
-    // Browser: send the login cookie to the API (different port = cross-origin).
-    withCredentials: true,
     ...config,
   })
 
