@@ -1,6 +1,7 @@
 const inrFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
+  minimumFractionDigits: 0, // INR would otherwise always show ".00"
   maximumFractionDigits: 2,
 })
 
