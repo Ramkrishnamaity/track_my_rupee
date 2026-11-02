@@ -5,21 +5,20 @@ import { ArrowUp, ChartPie, Lightbulb, Scale, Sparkles, SquarePen, Wallet } from
 
 import { Button } from "@/components/ui/button"
 import { useCurrentUser } from "@/components/app/user-provider"
+import { SUGGESTED_QUESTIONS, sampleAnswer } from "@/components/assistant/sample-answers"
 import { firstName } from "@/lib/user"
 import { cn } from "@/lib/utils"
 
 type Message = {
   id: number
   role: "user" | "assistant"
-  content: React.ReactNode
+  /** Words of the message (each with its trailing space), so a reply can appear a few at a time. */
+  words: string[]
+  /** How many words are shown so far (assistant replies "stream" in). */
+  shown: number
 }
 
-const SUGGESTED_QUESTIONS = [
-  "Check my last month's expenses and give me suggestions",
-  "How much salary was credited last month?",
-  "Compare my spending this month vs last month",
-  "Where can I cut down my spending?",
-]
+const toWords = (text: string) => text.match(/\S+\s*/g) ?? []
 
 const suggestionIcons = [ChartPie, Wallet, Scale, Lightbulb]
 
@@ -42,35 +41,66 @@ export function AssistantChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [thinking, setThinking] = useState(false)
+  const [streaming, setStreaming] = useState(false)
   const nextId = useRef(0)
+  const timers = useRef<{ delay?: ReturnType<typeof setTimeout>; tick?: ReturnType<typeof setInterval> }>({})
   const endRef = useRef<HTMLDivElement>(null)
+  const busy = thinking || streaming
 
   // Keep the newest message in view.
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
   }, [messages, thinking])
 
+  // Stop any reply in progress when leaving the page.
+  useEffect(() => () => stopTimers(), [])
+
+  function stopTimers() {
+    clearTimeout(timers.current.delay)
+    clearInterval(timers.current.tick)
+  }
+
   function ask(question: string) {
     const text = question.trim()
-    if (!text || thinking) return
-    setMessages((m) => [...m, { id: nextId.current++, role: "user", content: text }])
+    if (!text || busy) return
+    setMessages((m) => [...m, { id: nextId.current++, role: "user", words: [text], shown: 1 }])
     setInput("")
     setThinking(true)
-    // Design phase: fake a short delay, then a placeholder reply. The real assistant replaces this.
-    setTimeout(() => {
-      setMessages((m) => [
-        ...m,
-        {
-          id: nextId.current++,
-          role: "assistant",
-          content: "I'm still being built. Answers are coming soon!",
-        },
-      ])
-      setThinking(false)
-    }, 900)
+
+    // Design phase: a sample answer after a short "thinking" pause, shown a few words at a time
+    // like a real streamed reply. The real assistant replaces this.
+    timers.current.delay = setTimeout(
+      () => {
+        const id = nextId.current++
+        const words = toWords(sampleAnswer(text))
+        setThinking(false)
+        setStreaming(true)
+        setMessages((m) => [...m, { id, role: "assistant", words, shown: 0 }])
+        timers.current.tick = setInterval(() => {
+          setMessages((m) =>
+            m.map((msg) =>
+              msg.id === id ? { ...msg, shown: msg.shown + 1 + Math.floor(Math.random() * 3) } : msg
+            )
+          )
+        }, 45)
+        // Stop once every word is shown.
+        timers.current.delay = setTimeout(
+          () => {
+            clearInterval(timers.current.tick)
+            setMessages((m) => m.map((msg) => (msg.id === id ? { ...msg, shown: words.length } : msg)))
+            setStreaming(false)
+          },
+          (words.length / 2) * 45 + 100
+        )
+      },
+      700 + Math.random() * 800
+    )
   }
 
   function newChat() {
+    stopTimers()
+    setThinking(false)
+    setStreaming(false)
     setMessages([])
     setInput("")
   }
@@ -120,13 +150,15 @@ export function AssistantChat() {
             m.role === "user" ? (
               <div key={m.id} className="flex justify-end">
                 <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm whitespace-pre-wrap text-primary-foreground">
-                  {m.content}
+                  {m.words.join("")}
                 </div>
               </div>
             ) : (
               <div key={m.id} className="flex gap-3">
                 <AssistantAvatar />
-                <div className="min-w-0 flex-1 pt-1 text-sm leading-relaxed">{m.content}</div>
+                <div className="min-w-0 flex-1 pt-1 text-sm leading-relaxed whitespace-pre-wrap">
+                  {m.words.slice(0, m.shown).join("")}
+                </div>
               </div>
             )
           )}
@@ -180,7 +212,7 @@ export function AssistantChat() {
             type="submit"
             size="icon"
             className="size-10 shrink-0 rounded-xl"
-            disabled={!input.trim() || thinking}
+            disabled={!input.trim() || busy}
             aria-label="Send"
           >
             <ArrowUp />

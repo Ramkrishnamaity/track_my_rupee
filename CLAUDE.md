@@ -70,7 +70,7 @@ Layout: `routes/` → `validators/` (zod) → `middlewares/` → `controllers/` 
 ## Status
 
 - Done: auth, categories, budgets, transactions, dashboard, settings (reset or delete account). All are connected end to end.
-- Blocked in the UI until the AI work: Quick add (header popup) and the AI Assistant page.
+- Until the AI work, both AI features are dummies. Quick add (header popup) reads text with simple rules (`components/app/quick-add-sample.ts`), and its Save only shows a toast. The AI Assistant answers with sample replies (`components/assistant/sample-answers.ts`).
 - Pending:
   - backend tests (Vitest + Supertest with a separate test database)
   - deployment, including the cookie and domain decision (SameSite)
